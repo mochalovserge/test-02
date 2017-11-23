@@ -14,12 +14,16 @@ window.onload = function () {
     });
 
     var save_game_button = document.getElementById('save-game');
-    save_game_button.addEventListener('click', function () {
+    save_game_button.addEventListener('click', function (e) {
+        e.preventDefault();
+
         SaveGame();
     });
 
     var best_result_button = document.getElementById('best-results');
-    best_result_button.addEventListener('click', function () {
+    best_result_button.addEventListener('click', function (e) {
+        e.preventDefault();
+
         GetWinners();
     });
 
@@ -42,8 +46,9 @@ function Game() {
 function SaveGame() {
     Ajax({
         method: 'POST',
-        action: '/api/game/save-game',
+        action: '/api/game/save',
         success: function () {
+            alert('Игра сохранена')
         }
     });
 }

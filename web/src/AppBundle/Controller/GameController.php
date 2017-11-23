@@ -2,11 +2,14 @@
 
 namespace AppBundle\Controller;
 
+use AppBundle\Entity\GameStateStore;
 use AppBundle\Entity\Winner;
 use AppBundle\Game\Game;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
@@ -123,10 +126,36 @@ class GameController extends FOSRestController
     public function saveGameAction(Request $request)
     {
         $game = $this->getGameInstance($request);
+        $session = $request->getSession();
 
-        // save game state ...
+        $cookie = new Cookie('game_id', $session->getId(), strtotime('now + 60 minutes'));
+        $response = new Response();
+        $response->headers->setCookie($cookie);
+        // save game state
 
-        return $this->handleView($this->view(null, 200));
+        /** @var GameStateStore $gameStateStore */
+        $gameStateStore = $this->getDoctrine()
+            ->getRepository(GameStateStore::class)
+            ->findOneBySession($session->getId());
+        if (!$gameStateStore) {
+            $gameStateStore = new GameStateStore();
+        }
+
+        $gameStateStore->setSession($session->getId());
+        $gameStateStore->setInstance($game);
+
+        $em = $this->getDoctrine()->getManager();
+
+        if (!$gameStateStore->getId()) {
+            $em->persist($gameStateStore);
+        } else {
+            $em->merge($gameStateStore);
+        }
+        $em->flush();
+
+        return $this->handleView($this->view([
+            'message' => 'Success'
+        ], 200, $response->headers->all()));
     }
 
     /**
@@ -187,11 +216,22 @@ class GameController extends FOSRestController
      */
     private function getGameInstance(Request $request)
     {
-        $session = $request->getSession();
 
+        $session = $request->getSession();
         if (!($game = $session->get('game'))) {
-            $game = new Game();
-            $game->initMatrix();
+
+            /** @var GameStateStore $gameStateStore */
+            $gameStateStore = $this->getDoctrine()
+                ->getRepository(GameStateStore::class)
+                ->findOneBySession($request->cookies->get('game_id'));
+
+            if ($gameStateStore) {
+                $game = $gameStateStore->getInstance();
+            } else {
+
+                $game = new Game();
+                $game->initMatrix();
+            }
 
             $session->set('game', $game);
         }
