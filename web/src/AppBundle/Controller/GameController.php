@@ -7,6 +7,7 @@ use AppBundle\Game\Game;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
  * Class GameController
@@ -78,20 +79,50 @@ class GameController extends FOSRestController
     {
         $winners = $this->getDoctrine()
             ->getRepository(Winner::class)
-            ->findAll();
+            ->findBy([], [
+                'click_count' => 'DESC'
+            ]);
 
         return $winners;
     }
 
     /**
      * @param Request $request
-     * @return array
+     * @return \Symfony\Component\HttpFoundation\Response
      *
      * @Rest\Post("/api/game/winners", name="game_api_set_winner")
      */
-    public function setWinnerAction(Request $request)
+    public function addWinnerAction(Request $request)
     {
-        return [];
+        $game = $this->getGameInstance($request);
+        $winner = new Winner();
+
+        $session = $request->getSession();
+        $id = $session->get('id');
+
+        $winner->setId($id);
+        $winner->setName($request->get('name'));
+        $winner->setClickCount($game->getClickCount());
+
+        $validator = $this->get('validator');
+        $errors = $validator->validate($winner);
+
+        if (count($errors)) {
+            return $this->handleView($this->view([
+                'errors' => $errors
+            ], 400));
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        if ($id) {
+            $em->persist($winner);
+        } else {
+            $em->merge($winner);
+        }
+
+        $em->flush();
+
+        return $this->handleView($this->view(null, 200));
     }
 
     /**
