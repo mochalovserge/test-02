@@ -35,6 +35,32 @@ class GameController extends FOSRestController
 
     /**
      * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\Response
+     *
+     * @Rest\Get("/api/game/state", name="game_api_get_state")
+     */
+    public function gameStateAction(Request $request)
+    {
+        $game = $this->getGameInstance($request);
+        $name = $request->getSession()->get('name', "");
+        $best_result = 0;
+
+        /** @var Winner $winner */
+        $winner = $this->getDoctrine()->getRepository(Winner::class)->findOneByName($name);
+        if ($winner) {
+            $best_result = $winner->getClickCount();
+        }
+
+        return $this->handleView($this->view([
+            'name' => $name,
+            'best_result' => $best_result,
+            'clicks' => $game->getClickCount(),
+            'state' => $game->getState(),
+        ], 200));
+    }
+
+    /**
+     * @param Request $request
      * @return array
      *
      * @Rest\Post("/api/game", name="game_api_click")
@@ -71,19 +97,36 @@ class GameController extends FOSRestController
     }
 
     /**
-     * @return array
-     *
      * @Rest\Get("/api/game/winners", name="game_api_get_winners")
+     *
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function winnersAction()
     {
         $winners = $this->getDoctrine()
             ->getRepository(Winner::class)
             ->findBy([], [
-                'click_count' => 'DESC'
-            ]);
+                'click_count' => 'ASC'
+            ], 10);
 
-        return $winners;
+        return $this->handleView($this->view([
+            'data' => $winners
+        ], 200));
+    }
+
+    /**
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\Response
+     *
+     * @Rest\Post("/api/game/save", name="game_api_save_game");
+     */
+    public function saveGameAction(Request $request)
+    {
+        $game = $this->getGameInstance($request);
+
+        // save game state ...
+
+        return $this->handleView($this->view(null, 200));
     }
 
     /**
@@ -95,14 +138,25 @@ class GameController extends FOSRestController
     public function addWinnerAction(Request $request)
     {
         $game = $this->getGameInstance($request);
-        $winner = new Winner();
 
-        $session = $request->getSession();
-        $id = $session->get('id');
+        if (!$game->getState()) {
+            return $this->handleView($this->view([
+                'error' => 'Игра не закончена'
+            ], 400));
+        }
 
-        $winner->setId($id);
+        $winner = $this->getDoctrine()
+            ->getRepository(Winner::class)
+            ->findOneByName($request->get('name'));
+
+        if (!$winner) {
+            $winner = new Winner();
+        }
+
         $winner->setName($request->get('name'));
         $winner->setClickCount($game->getClickCount());
+
+        $request->getSession()->set('name', $winner->getName());
 
         $validator = $this->get('validator');
         $errors = $validator->validate($winner);
@@ -114,7 +168,7 @@ class GameController extends FOSRestController
         }
 
         $em = $this->getDoctrine()->getManager();
-        if ($id) {
+        if (!$winner->getId()) {
             $em->persist($winner);
         } else {
             $em->merge($winner);
@@ -122,7 +176,9 @@ class GameController extends FOSRestController
 
         $em->flush();
 
-        return $this->handleView($this->view(null, 200));
+        return $this->handleView($this->view([
+            'message' => 'Success'
+        ], 200));
     }
 
     /**

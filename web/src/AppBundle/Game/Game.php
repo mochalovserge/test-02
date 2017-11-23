@@ -34,9 +34,24 @@ class Game
     {
         for ($i = 0; $i < self::WIDTH_SIZE; ++$i) {
             for ($j = 0; $j < self::HEIGHT_SIZE; ++$j) {
-                $this->matrix[$i][$j] = rand(0, 1);
+                $this->matrix[$i][$j] = 0;//rand(0, 1);
             }
         }
+    }
+
+    /**
+     * @return bool
+     */
+    public function getState()
+    {
+        for ($i = 0; $i < self::WIDTH_SIZE; ++$i) {
+            for ($j = 0; $j < self::HEIGHT_SIZE; ++$j) {
+                if ($this->matrix[$i][$j] == 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
@@ -73,6 +88,8 @@ class Game
                 $this->matrix[$i + 1][$j + 1] = (int)(!$this->matrix[$i + 1][$j + 1]);
             }
 
+            //$this->matrix[rand(0, 4)][rand(0, 4)] = 0;
+
             $this->setClickCount($this->getClickCount() + 1);
         }
     }
@@ -99,28 +116,5 @@ class Game
     public function setClickCount($clickCount)
     {
         $this->clickCount = $clickCount;
-    }
-
-    public function saveGameState()
-    {
-    }
-
-    public function saveGameResult(array $data)
-    {
-    }
-
-    public function getWinners()
-    {
-        return [];
-    }
-
-    public function setState($state)
-    {
-        $this->state = $state;
-    }
-
-    public function getState()
-    {
-        return $this->state;
     }
 }

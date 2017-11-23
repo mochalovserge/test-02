@@ -1,0 +1,29 @@
+.square {
+    width: 500px;
+    height: 500px;
+}
+
+.square-item {
+    width: 100px;
+    height: 100px;
+
+    background: #9d9d9d;
+    float: left;
+
+    border: 1px solid #0f0f0f;
+}
+
+.clear {
+    clear: both;
+}
+
+.on {
+    background: #9aba36;
+}
+
+.clicks-count {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 50px;
+    width: 500px;
+    text-align: right;
+}
