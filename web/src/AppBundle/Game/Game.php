@@ -2,8 +2,16 @@
 
 namespace AppBundle\Game;
 
+/**
+ * Class Game
+ * @package AppBundle\Game
+ * @author Mochalov Sergey <mochalov.serge@gmail.com>
+ */
 class Game
 {
+    /**
+     * Размер матрицы
+     */
     const WIDTH_SIZE = 5;
     const HEIGHT_SIZE = 5;
 
@@ -17,15 +25,6 @@ class Game
      */
     protected $matrix = [];
 
-    /**
-     * @var string
-     */
-    protected $state;
-
-    /**
-     * @var string
-     */
-    protected $gamerName;
 
     /**
      * @return void
@@ -34,7 +33,7 @@ class Game
     {
         for ($i = 0; $i < self::WIDTH_SIZE; ++$i) {
             for ($j = 0; $j < self::HEIGHT_SIZE; ++$j) {
-                $this->matrix[$i][$j] = 0;//rand(0, 1);
+                $this->matrix[$i][$j] = 0;
             }
         }
     }
@@ -88,8 +87,7 @@ class Game
                 $this->matrix[$i + 1][$j + 1] = (int)(!$this->matrix[$i + 1][$j + 1]);
             }
 
-            //$this->matrix[rand(0, 4)][rand(0, 4)] = 0;
-
+            $this->matrix[rand(0, 4)][rand(0, 4)] = 0;
             $this->setClickCount($this->getClickCount() + 1);
         }
     }

@@ -48,7 +48,7 @@ function SaveGame() {
         method: 'POST',
         action: '/api/game/save',
         success: function () {
-            alert('Игра сохранена')
+            alert('Игра сохранена');
         }
     });
 }
@@ -104,11 +104,8 @@ function drawSquare(data) {
         document.getElementById('clicks-count').innerText = clicks;
 
         if (square) {
-            var i;
-            var j;
-
-            for (i = 0; i < 5; ++i) {
-                for (j = 0; j < 5; ++j) {
+            for (var i = 0; i < 5; ++i) {
+                for (var j = 0; j < 5; ++j) {
 
                     var item = document.createElement("div");
                     item.className = 'square-item';
@@ -160,8 +157,6 @@ function Ajax(options) {
 
     var xhr = new XMLHttpRequest();
     xhr.open(options.method, options.action);
-    //xhr.setRequestHeader('Content-Type', 'application/json');
-
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
     xhr.onload = function () {

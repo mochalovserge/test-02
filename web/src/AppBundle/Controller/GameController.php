@@ -20,53 +20,56 @@ use Symfony\Component\Validator\Exception\InvalidArgumentException;
 class GameController extends FOSRestController
 {
     /**
-     * @param Request $request
-     * @return array
-     *
      * @Rest\Get("/api/game", name="game_page")
+     *
+     * @param Request $request
+     * @return Response
      */
     public function gameAction(Request $request)
     {
         $game = $this->getGameInstance($request);
 
-        return [
+        return $this->handleView($this->view([
             'clicks' => $game->getClickCount(),
             'square' => $game->getMatrix(),
-            'state' => $game->getState(),
-        ];
-    }
-
-    /**
-     * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
-     *
-     * @Rest\Get("/api/game/state", name="game_api_get_state")
-     */
-    public function gameStateAction(Request $request)
-    {
-        $game = $this->getGameInstance($request);
-        $name = $request->getSession()->get('name', "");
-        $best_result = 0;
-
-        /** @var Winner $winner */
-        $winner = $this->getDoctrine()->getRepository(Winner::class)->findOneByName($name);
-        if ($winner) {
-            $best_result = $winner->getClickCount();
-        }
-
-        return $this->handleView($this->view([
-            'name' => $name,
-            'best_result' => $best_result,
-            'clicks' => $game->getClickCount(),
             'state' => $game->getState(),
         ], 200));
     }
 
     /**
-     * @param Request $request
-     * @return array
+     * @Rest\Get("/api/game/state", name="game_api_get_state")
      *
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function gameStateAction(Request $request)
+    {
+        $game = $this->getGameInstance($request);
+        $name = $request->getSession()->get('name', '');
+        $best_result = 0;
+
+        /** @var Winner $winner */
+        $winner = $this->getDoctrine()
+            ->getRepository(Winner::class)
+            ->findOneByName($name);
+
+        if ($winner) {
+            $best_result = $winner->getClickCount();
+        }
+
+        return $this->handleView($this->view([
+            'best_result' => $best_result,
+            'clicks' => $game->getClickCount(),
+            'state' => $game->getState(),
+            'name' => $name,
+        ], 200));
+    }
+
+    /**
      * @Rest\Post("/api/game", name="game_api_click")
+     *
+     * @param Request $request
+     * @return Response
      */
     public function clickAction(Request $request)
     {
@@ -76,27 +79,38 @@ class GameController extends FOSRestController
         $game = $this->getGameInstance($request);
         $game->setClick($row, $col);
 
-        return [
+        return $this->handleView($this->view([
             'message' => 'Success'
-        ];
+        ], 200));
     }
 
     /**
-     * @param Request $request
-     * @return array
-     *
      * @Rest\Delete("/api/game", name="game_api_refresh")
+     *
+     * @param Request $request
+     * @return Response
      */
     public function refreshAction(Request $request)
     {
+        /** @var GameStateStore $gameStateStore */
+        $gameStateStore = $this->getDoctrine()
+            ->getRepository(GameStateStore::class)
+            ->findOneBySession($request->cookies->get('game_id'));
+
+        if ($gameStateStore) {
+            $dm = $this->getDoctrine()->getManager();
+            $dm->remove($gameStateStore);
+            $dm->flush();
+        }
+
         $session = $request->getSession();
         if ($session->has('game')) {
             $session->remove('game');
         }
 
-        return [
+        return $this->handleView($this->view([
             'message' => 'The game is refreshed',
-        ];
+        ], 200));
     }
 
     /**
@@ -118,10 +132,10 @@ class GameController extends FOSRestController
     }
 
     /**
+     * @Rest\Post("/api/game/save", name="game_api_save_game")
+     *
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\Response
-     *
-     * @Rest\Post("/api/game/save", name="game_api_save_game");
      */
     public function saveGameAction(Request $request)
     {
@@ -159,10 +173,10 @@ class GameController extends FOSRestController
     }
 
     /**
+     * @Rest\Post("/api/game/winners", name="game_api_set_winner")
+     *
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\Response
-     *
-     * @Rest\Post("/api/game/winners", name="game_api_set_winner")
      */
     public function addWinnerAction(Request $request)
     {
@@ -216,7 +230,6 @@ class GameController extends FOSRestController
      */
     private function getGameInstance(Request $request)
     {
-
         $session = $request->getSession();
         if (!($game = $session->get('game'))) {
 
