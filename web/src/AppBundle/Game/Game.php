@@ -87,7 +87,10 @@ class Game
                 $this->matrix[$i + 1][$j + 1] = (int)(!$this->matrix[$i + 1][$j + 1]);
             }
 
-            $this->matrix[rand(0, 4)][rand(0, 4)] = 0;
+            if (rand(0, 1)) {
+                $this->matrix[rand(0, 4)][rand(0, 4)] = 0;
+            }
+
             $this->setClickCount($this->getClickCount() + 1);
         }
     }
